@@ -1,7 +1,7 @@
 import { fromEvent, Observable } from "rxjs";
 import { map, filter } from 'rxjs/operators';
-import { commandKeys, gameStatus } from './constants';
-import Game from "./game";
+import { GameAction } from "../models/interfaces";
+import { commandKeys } from '../models/constants';
 
 export function getCommand(): Observable<number> {
     const eventObserable = fromEvent<KeyboardEvent>(document, 'keydown').pipe(
@@ -23,11 +23,12 @@ function findCommand(key: string): number {
     return val;
 }
 
-export function gameLoop(game: Game): void {
-    if (game.status === gameStatus.finished) {
-        game.finish();
-    }
-    else {
-        game.update();
-    }
+export function getAction(type: string, value: any): GameAction {
+    return { type, value };
+}
+
+export function getCanvasElement(): HTMLCanvasElement {
+    const el: HTMLCanvasElement | null = document.querySelector('canvas');
+    if (!!el) return el;
+    throw Error('No canvas element found');
 }

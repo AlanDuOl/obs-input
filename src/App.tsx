@@ -1,10 +1,10 @@
-import Screen from './Screen';
+import Game from './Pages/Game';
 import './App.css';
 
 function App() {
   return (
     <div className="App">
-      <Screen />
+      <Game />
     </div>
   );
 }
