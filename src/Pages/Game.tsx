@@ -15,7 +15,7 @@ function Game() {
     const [inputListener, setInputListener] = useState<Subscription>();
     const [state, dispatch] = useReducer<Reducer<GameState, GameAction>, GameState>(gameReducer, gameInitialState, initState);
     const [board, setBoard] = useState<Board>();
-    const [update, setUpdate] = useState<number>();
+    // const [update, setUpdate] = useState<number>();
 
     let loopId: number;
 
@@ -96,17 +96,17 @@ function Game() {
         if (state.status === GameStatus.finished) {
             setLoopId();
             dispatch({ type: gameAction.GAME_STATUS, value: GameStatus.running });
-            setUpdate(Math.random())
+            // setUpdate(Math.random())
         }
         else if (state.status === GameStatus.paused) {
             setLoopId();
             dispatch({ type: gameAction.GAME_STATUS, value: GameStatus.running });
-            setUpdate(Math.random())
+            // setUpdate(Math.random())
         }
         else if (state.status === GameStatus.running) {
             clearLoopId();
             dispatch({ type: gameAction.GAME_STATUS, value: GameStatus.paused });
-            setUpdate(Math.random())
+            // setUpdate(Math.random())
         }
         
     }
