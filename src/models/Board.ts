@@ -1,8 +1,8 @@
-import { Subscription } from "rxjs";
-import { gameSpeed, statusText } from "./constants";
-import { GameStatus, GameCommand, GameAction } from './interfaces';
-import { getCommand, getAction } from '../Services/utils';
-import gameActions from "../store/actions/gameAction";
+// import { Subscription } from "rxjs";
+// import { gameSpeed, statusText } from "./constants";
+// import { GameStatus, GameCommand, GameAction } from './interfaces';
+// import { getCommand, getAction } from '../Services/utils';
+// import gameActions from "../store/actions/gameAction";
 
 export default class Board {
 

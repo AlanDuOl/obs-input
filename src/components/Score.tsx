@@ -1,20 +1,13 @@
-import { Box, Container, Grid } from '@material-ui/core';
-import { useEffect, useState } from 'react';
+// import { Box, Container, Grid } from '@material-ui/core';
 import './Score.css';
 
 function Score(props: any){
-    const [statusText, setStatusText] = useState<string>();
-
-    useEffect(() => {
-        console.log('rendered score:', props.statusText)
-        setStatusText(props.statusText);
-    }, [props.statusText])
 
     return (
         <section className="score-container">
             <div className="score-box">
                 <span>Status: </span>
-                <span>{statusText}</span>
+                <span>{props.statusText}</span>
             </div>
             <div className="score-box">
                 <span>Level: </span>
@@ -26,6 +19,7 @@ function Score(props: any){
             </div>
         </section>
     )
+
 }
 
 export default Score;
