@@ -1,4 +1,4 @@
-import { useState, useEffect, useReducer, Reducer } from 'react';
+import { useState, useEffect, useReducer, Reducer, useCallback } from 'react';
 import { Observable } from 'rxjs';
 import Score from '../components/Score';
 import { getCommand, getCanvasElement } from '../Services/utils';
@@ -9,36 +9,40 @@ import Board from '../models/Board';
 import gameReducer from '../store/reducers/gameReducer';
 import gameAction from '../store/actions/gameAction';
 
+
 function Game() {
     
-    const [input, setInput] = useState<Observable<number>>();
+    const [input] = useState<Observable<number>>(getCommand());
     const [state, dispatch] = useReducer<Reducer<GameState, GameAction>, GameState>(gameReducer, gameInitialState, initState);
     const [board, setBoard] = useState<Board>();
-
-    let loopId: number;
     
-    useEffect(() => {
-        const sub = input?.subscribe((command: number) => handleCommand(command));
-        return () => sub?.unsubscribe();
-    });
-
-    useEffect(() => {
-        setInput(getCommand());
-        setBoard(new Board(getCanvasElement()));
-    }, [])
-
-    function gameLoop(gameBoard: Board): void {
-        console.log(state.statusText);
-        if (state.status === GameStatus.running) {
-            // update();
+    const loop = useCallback((board: Board) => {
+        if (state.status === GameStatus.finished) {
+            console.log('Game finished');
         }
-    }
+        else if (state.status === GameStatus.paused) {
+            console.log('Game paused');
+        }
+        else {
+            console.log('Game running');
+        }
+    },
+    [state]);
 
-    function initState(gameInitialState: GameState): GameState {
-        return gameInitialState;
-    }
+    const startStop = useCallback(() => {
+        if (state.status === GameStatus.finished) {
+            dispatch({ type: gameAction.GAME_STATUS, value: GameStatus.running });
+        }
+        else if (state.status === GameStatus.paused) {
+            dispatch({ type: gameAction.GAME_STATUS, value: GameStatus.running });
+        }
+        else if (state.status === GameStatus.running) {
+            dispatch({ type: gameAction.GAME_STATUS, value: GameStatus.paused });
+        }
+    },
+    [state.status]);
 
-    function handleCommand(command: number): void {
+    const handleCommand = useCallback((command: number) => {
         switch(command) {
             case GameCommand.moveDown:
                 console.log('move down');
@@ -50,7 +54,7 @@ function Game() {
                 console.log('move right');
                 break;
             case GameCommand.start:
-                start();
+                startStop();
                 break;
             case GameCommand.rotate:
                 console.log('block rotate');
@@ -62,40 +66,22 @@ function Game() {
             default:
                 throw Error('Unknown command');
         }
+    },
+    [startStop]);
 
-    }
+    useEffect(() => {
+        let loopId = setInterval(loop, gameSpeed, board);
+        return () => clearInterval(loopId);
+    }, [loop, board]);
 
-    function setLoopId(): void {
-        if (!!loopId) {
-            clearInterval(loopId);
-            loopId = 0;
-        }
-        else {
-            loopId = setInterval(gameLoop, gameSpeed, board);
-        }
-    }
+    useEffect(() => {
+        const sub = input?.subscribe((command: number) => handleCommand(command));
+        setBoard(new Board(getCanvasElement()));
+        return () => sub?.unsubscribe();
+    }, [input, handleCommand])
 
-    function clearLoopId(): void {
-        if (loopId) {
-            clearInterval(loopId);
-            loopId = 0;
-        }
-    }
-
-    function start(): void {
-        if (state.status === GameStatus.finished) {
-            setLoopId();
-            dispatch({ type: gameAction.GAME_STATUS, value: GameStatus.running });
-        }
-        else if (state.status === GameStatus.paused) {
-            setLoopId();
-            dispatch({ type: gameAction.GAME_STATUS, value: GameStatus.running });
-        }
-        else if (state.status === GameStatus.running) {
-            clearLoopId();
-            dispatch({ type: gameAction.GAME_STATUS, value: GameStatus.paused });
-        }
-        
+    function initState(gameInitialState: GameState): GameState {
+        return gameInitialState;
     }
 
     function finish(): void {
@@ -104,18 +90,6 @@ function Game() {
         // this._subs?.unsubscribe();
         // this._status = GameStatus.finished;
     }
-
-    // init(): void {
-    //     this.setContext();
-    //     this.stopLoop();
-    //     this._subs = getCommand().subscribe(command => this.handleCommand(command));
-    // }
-
-    // function printProps() {
-    //     // setStatus(props);
-    //     // console.log(props);
-    //     props.setGameState(getAction(gameActions.GAME_STATUS, GameStatus.running))
-    // }
 
     return (
             <div id="screen">
