@@ -1,4 +1,4 @@
-import { statusText } from '../../models/constants';
+import { statusText } from '../../constants';
 import { GameAction, GameState, GameStatus } from '../../models/interfaces';
 import gameAction from '../actions/gameAction';
 

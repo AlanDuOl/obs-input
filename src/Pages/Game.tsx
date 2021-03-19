@@ -2,7 +2,7 @@ import { useState, useEffect, useReducer, Reducer, useCallback } from 'react';
 import { Observable } from 'rxjs';
 import Score from '../components/Score';
 import { getCommand, getCanvasElement } from '../Services/utils';
-import { gameInitialState, gameSpeed } from '../models/constants';
+import { gameInitialState, gameSpeed } from '../constants';
 import { GameAction, GameCommand, GameState, GameStatus } from '../models/interfaces';
 import './Game.scss';
 import Board from '../models/Board';
@@ -19,12 +19,14 @@ function Game() {
     const loop = useCallback((board: Board) => {
         if (state.status === GameStatus.finished) {
             console.log('Game finished');
+            board.finish();
         }
         else if (state.status === GameStatus.paused) {
             console.log('Game paused');
         }
         else {
             console.log('Game running');
+            board.update();
         }
     },
     [state]);
@@ -41,6 +43,13 @@ function Game() {
         }
     },
     [state.status]);
+
+    const finish = useCallback(() => {
+        console.log('game finish');
+        if (state.status !== GameStatus.finished) {
+            dispatch({ type: gameAction.GAME_STATUS, value: GameStatus.finished });
+        }
+    }, [state.status]);
 
     const handleCommand = useCallback((command: number) => {
         switch(command) {
@@ -60,14 +69,13 @@ function Game() {
                 console.log('block rotate');
                 break;
             case GameCommand.finish:
-                console.log('game finish');
                 finish();
                 break;
             default:
                 throw Error('Unknown command');
         }
     },
-    [startStop]);
+    [startStop, finish]);
 
     useEffect(() => {
         let loopId = setInterval(loop, gameSpeed, board);
@@ -78,28 +86,21 @@ function Game() {
         const sub = input?.subscribe((command: number) => handleCommand(command));
         setBoard(new Board(getCanvasElement()));
         return () => sub?.unsubscribe();
-    }, [input, handleCommand])
+    }, [input, handleCommand]);
 
     function initState(gameInitialState: GameState): GameState {
         return gameInitialState;
     }
 
-    function finish(): void {
-        // sub?.unsubscribe();
-        // this.stopLoop();
-        // this._subs?.unsubscribe();
-        // this._status = GameStatus.finished;
-    }
-
     return (
-            <div id="screen">
-                <Score statusText={state.statusText} score={state.score} level={state.level} />
-                <canvas id="screen" width="500" height="500">
-                    This app does not work in the browser current version!!
-                </canvas>
-                {console.log('rerendered')}
-            </div>
-        );
+        <div id="screen">
+            <Score statusText={state.statusText} score={state.score} level={state.level} />
+            <canvas width="500" height="500">
+                This app does not work in the browser current version!!
+            </canvas>
+            {console.log('rerendered')}
+        </div>
+    );
 }
 
 export default Game;

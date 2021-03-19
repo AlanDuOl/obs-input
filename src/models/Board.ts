@@ -6,7 +6,7 @@
 
 export default class Board {
 
-    private _context: CanvasRenderingContext2D | null = null;
+    private _context: CanvasRenderingContext2D | null;
 
     constructor(canvas: HTMLCanvasElement) {
         this._context  = canvas.getContext('2d');
@@ -21,6 +21,13 @@ export default class Board {
             this._context.fillStyle = "black";
             this._context.fillRect(20, 20, 50, 50);
         }
+        else {
+            throw Error("No canvas context found!");
+        }
+    }
+
+    finish(): void {
+        this._context?.restore();
     }
 }
 

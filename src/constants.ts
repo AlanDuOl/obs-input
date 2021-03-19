@@ -1,4 +1,4 @@
-import { GameState, GameStatus } from "./interfaces";
+import { GameState, GameStatus } from "./models/interfaces";
 
 export const statusText = {
     running: 'Running',

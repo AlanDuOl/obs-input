@@ -1,7 +1,7 @@
 import { fromEvent, Observable } from "rxjs";
 import { map, filter } from 'rxjs/operators';
 import { GameAction } from "../models/interfaces";
-import { commandKeys } from '../models/constants';
+import { commandKeys } from '../constants';
 
 export function getCommand(): Observable<number> {
     const eventObserable = fromEvent<KeyboardEvent>(document, 'keydown').pipe(
