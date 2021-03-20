@@ -1,5 +1,6 @@
 
 .score-container {
+    font-size: 0.5rem;
     margin: 5px 0;
     
     display: flex;

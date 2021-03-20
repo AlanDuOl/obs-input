@@ -2,7 +2,7 @@ import { useState, useEffect, useReducer, Reducer, useCallback } from 'react';
 import { Observable } from 'rxjs';
 import Score from '../components/Score';
 import { getCommand, getCanvasElement } from '../Services/utils';
-import { gameInitialState, gameSpeed, canvas } from '../constants';
+import { gameInitialState, GAME_SPEED, canvas } from '../constants';
 import { GameAction, GameCommand, GameState, GameStatus } from '../models/interfaces';
 import './Game.scss';
 import Board from '../models/Board';
@@ -43,46 +43,33 @@ function Game() {
             dispatch({ type: gameAction.GAME_STATUS, value: GameStatus.paused });
         }
         else {
-            throw new Error("Unknown game status " + state.status + ": " + state.statusText);
+            throw new Error("Unknown game status " + state.status);
         }
     },
     [state.status]);
 
     const finish = useCallback(() => {
-        console.log('game finish');
         if (state.status !== GameStatus.finished) {
             dispatch({ type: gameAction.GAME_STATUS, value: GameStatus.finished });
+            board?.clearCanvas();
         }
-    }, [state.status]);
+    }, [state.status, board]);
 
     const handleCommand = useCallback((command: number) => {
-        switch(command) {
-            case GameCommand.moveDown:
-                console.log('move down');
-                break;
-            case GameCommand.moveLeft:
-                console.log('move left');
-                break;
-            case GameCommand.moveRight:
-                console.log('move right');
-                break;
-            case GameCommand.start:
-                startStop();
-                break;
-            case GameCommand.rotate:
-                console.log('block rotate');
-                break;
-            case GameCommand.finish:
-                finish();
-                break;
-            default:
-                throw new Error('Unknown command ' + command);
+        if(command === GameCommand.start) {
+            startStop();
+        }
+        else if (command === GameCommand.finish) {
+            finish();
+        }
+        else {
+            board?.updateBlock(command);
         }
     },
-    [startStop, finish]);
+    [startStop, finish, board]);
 
     useEffect(() => {
-        let loopId = setInterval(loop, gameSpeed, board);
+        let loopId = setInterval(loop, GAME_SPEED, board);
         return () => clearInterval(loopId);
     }, [loop, board]);
 

@@ -3,8 +3,7 @@ import {
     blockType,
     BLOCK_DELTA_ROTATION, BLOCK_INITIAL_ROTATION,
     WALL_NUM_TILES_WIDTH,
-    WALL_NUM_TILES_HEIGHT,
-    blockInitialSpeed
+    blockInitialSpeed,
 } from '../constants';
 import { BlockShape, BlockType, CanvasDimensions, Position } from './interfaces.js'
 
@@ -52,48 +51,49 @@ export default class Block {
         this.rotationPoint.y += this.speed
     }
 
-    moveLeft(canvasDims: CanvasDimensions, wall: Position[][]): void {
-        let canBlockMove = this.checkMoveLeft(canvasDims, wall)
+    moveLeft(tileDim: number, wall: Position[][]): void {
+        let canBlockMove = this.checkMoveLeft(tileDim, wall)
         // If block can move move left
         if (canBlockMove) {
             this.tiles.forEach(tile => {
-                tile.x -= canvasDims.tileDim
+                tile.x -= tileDim
             })
-            this.rotationPoint.x -= canvasDims.tileDim
+            this.rotationPoint.x -= tileDim
         }
     }
 
-    moveRight(canvasDims: CanvasDimensions, wall: Position[][]): void {
-        let canBlockMove = this.checkMoveRight(canvasDims, wall)
+    moveRight(tileDim: number, wall: Position[][]): void {
+        let canBlockMove = this.checkMoveRight(tileDim, wall)
         // If block can move move right
         if (canBlockMove) {
             this.tiles.forEach(tile => {
-                tile.x += canvasDims.tileDim
+                tile.x += tileDim
             })
-            this.rotationPoint.x += canvasDims.tileDim
+            this.rotationPoint.x += tileDim
         }
     }
 
-    checkMoveLeft(canvasDims: CanvasDimensions, wall: Position[][]): boolean {
+    checkMoveLeft(tileDim: number, wall: Position[][]): boolean {
         let blockCanMove = true
         let keepLooping = true
         // Check if there is a tile that can't move
         try {
             this.tiles.forEach(tile => {
                 if (keepLooping) {
-                    let tileRow = Math.floor(tile.y / canvasDims.tileDim)
-                    let tileCol = Math.floor(tile.x / canvasDims.tileDim)
+                    let tileRow = Math.floor(tile.y / tileDim)
+                    let tileCol = Math.floor(tile.x / tileDim)
                     if (tileCol > 0) {
-                        loop1:
-                        for (let row = 0; row < WALL_NUM_TILES_HEIGHT; row++) {
-                            for (let col = 0; col < WALL_NUM_TILES_WIDTH; col++) {
-                                if (Object.keys(wall[row][col]).length === 2) {
+                        let endRow = tileRow < 1 ? 1 : tileRow + 1
+                        let endCol = tileCol - 1
+                        if (tileRow >= 0) {
+                            for (let row = tileRow; row <= endRow; row++) {
+                                if (wall[row][endCol].x !== 400 && wall[row][endCol].y !== 400) {
                                     // If blockTileCol is bigger than wallTileCol + 1 there is no need to check with that wallTile
-                                    if (tileCol === col + 1 && tileRow >= row - 1 && tileRow <= row + 1) {
+                                    // if (tileCol === col + 1 && tileRow >= row - 1 && tileRow <= row + 1) {
                                         blockCanMove = false
                                         keepLooping = false
-                                        break loop1
-                                    }
+                                        break
+                                    // }
                                 }
                             }
                         }
@@ -111,26 +111,27 @@ export default class Block {
         return blockCanMove
     }
 
-    checkMoveRight(canvasDims: CanvasDimensions, wall: Position[][]): boolean {
+    checkMoveRight(tileDim: number, wall: Position[][]): boolean {
         let blockCanMove = true
         let keepLooping = true
         // Check if there is a tile that can't move
         try {
-            this.tiles.forEach(currentTile => {
+            this.tiles.forEach(tile => {
                 if (keepLooping) {
-                    let tileRow = Math.floor(currentTile.y / canvasDims.tileDim)
-                    let tileCol = Math.floor(currentTile.x / canvasDims.tileDim)
+                    let tileRow = Math.floor(tile.y / tileDim)
+                    let tileCol = Math.floor(tile.x / tileDim)
                     if (tileCol < WALL_NUM_TILES_WIDTH - 1) {
-                        loop1:
-                        for (let row = 0; row < WALL_NUM_TILES_HEIGHT; row++) {
-                            for (let col = 0; col < WALL_NUM_TILES_WIDTH; col++) {
-                                if (Object.keys(wall[row][col]).length === 2) {
+                        let endRow = tileRow < 1 ? 1 : tileRow + 1
+                        let endCol = tileCol + 1
+                        if (tileRow >= 0) {
+                            for (let row = tileRow; row <= endRow; row++) {
+                                if (wall[row][endCol].x !== 400 && wall[row][endCol].y !== 400) {
                                     // If blockTileCol is bigger than wallTileCol + 1 there is no need to check with that wallTile
-                                    if (tileCol === col - 1 && tileRow >= row - 1 && tileRow <= row + 1) {
+                                    // if (tileCol === col - 1 && tileRow >= row - 1 && tileRow <= row + 1) {
                                         blockCanMove = false
                                         keepLooping = false
-                                        break loop1
-                                    }
+                                        break
+                                    // }
                                 }
                             }
                         }
@@ -191,7 +192,7 @@ export default class Block {
             for (let col = startCol; col < endCol; col++) {
                 let emptyRows = 0
                 for (let row = startRow; row > endRow; row--) {
-                    if (Object.keys(wall[row][col]).length === 2) {
+                    if (wall[row][col].x !== 400 && wall[row][col].y !== 400) {
                         emptyRows = 0
                     }
                     else {

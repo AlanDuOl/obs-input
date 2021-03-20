@@ -15,8 +15,6 @@ export const commandKeys = [
     ['Delete']
 ];
 
-export const gameSpeed = 500;
-
 export const gameInitialState: GameState = {
     status: GameStatus.finished,
     score: 0,
@@ -35,7 +33,8 @@ export const WALL_NUM_TILES_HEIGHT = 21
 export const BLOCK_DELTA_SPEED = 4
 export const BLOCK_DELTA_ROTATION = 90
 export const BLOCK_INITIAL_ROTATION = 0
-export const TIMER_SPEED = 50
+export const GAME_SPEED = 100;
+// export const GAME_SPEED = 20
 export const LEVEL_FACTOR = 100
 export const GAME_INITIAL_LEVEL = 1
 export const GAME_INITIAL_SCORE = 0
