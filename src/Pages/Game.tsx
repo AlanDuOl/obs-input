@@ -2,7 +2,7 @@ import { useState, useEffect, useReducer, Reducer, useCallback } from 'react';
 import { Observable } from 'rxjs';
 import Score from '../components/Score';
 import { getCommand, getCanvasElement } from '../Services/utils';
-import { gameInitialState, gameSpeed } from '../constants';
+import { gameInitialState, gameSpeed, canvas } from '../constants';
 import { GameAction, GameCommand, GameState, GameStatus } from '../models/interfaces';
 import './Game.scss';
 import Board from '../models/Board';
@@ -19,7 +19,7 @@ function Game() {
     const loop = useCallback((board: Board) => {
         if (state.status === GameStatus.finished) {
             console.log('Game finished');
-            board.finish();
+            // board.finish();
         }
         else if (state.status === GameStatus.paused) {
             console.log('Game paused');
@@ -34,12 +34,16 @@ function Game() {
     const startStop = useCallback(() => {
         if (state.status === GameStatus.finished) {
             dispatch({ type: gameAction.GAME_STATUS, value: GameStatus.running });
+            setBoard(new Board(getCanvasElement()));
         }
         else if (state.status === GameStatus.paused) {
             dispatch({ type: gameAction.GAME_STATUS, value: GameStatus.running });
         }
         else if (state.status === GameStatus.running) {
             dispatch({ type: gameAction.GAME_STATUS, value: GameStatus.paused });
+        }
+        else {
+            throw new Error("Unknown game status " + state.status + ": " + state.statusText);
         }
     },
     [state.status]);
@@ -72,7 +76,7 @@ function Game() {
                 finish();
                 break;
             default:
-                throw Error('Unknown command');
+                throw new Error('Unknown command ' + command);
         }
     },
     [startStop, finish]);
@@ -84,7 +88,6 @@ function Game() {
 
     useEffect(() => {
         const sub = input?.subscribe((command: number) => handleCommand(command));
-        setBoard(new Board(getCanvasElement()));
         return () => sub?.unsubscribe();
     }, [input, handleCommand]);
 
@@ -95,7 +98,7 @@ function Game() {
     return (
         <div id="screen">
             <Score statusText={state.statusText} score={state.score} level={state.level} />
-            <canvas width="500" height="500">
+            <canvas width={canvas.width} height={canvas.height}>
                 This app does not work in the browser current version!!
             </canvas>
             {console.log('rerendered')}

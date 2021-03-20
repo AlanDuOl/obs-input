@@ -1,33 +1,48 @@
-// import { Subscription } from "rxjs";
-// import { gameSpeed, statusText } from "./constants";
-// import { GameStatus, GameCommand, GameAction } from './interfaces';
-// import { getCommand, getAction } from '../Services/utils';
-// import gameActions from "../store/actions/gameAction";
+import { WALL_NUM_TILES_WIDTH } from "../constants";
+import Block from "./Block";
+import Wall from "./Wall";
+import { CanvasDimensions } from "./interfaces";
+
 
 export default class Board {
 
-    private _context: CanvasRenderingContext2D | null;
+    private ctx2D: CanvasRenderingContext2D | null;
+    private canvasDims: CanvasDimensions;
+    private block: Block;
+    // private wall: Wall = null;
 
     constructor(canvas: HTMLCanvasElement) {
-        this._context  = canvas.getContext('2d');
+        this.canvasDims = { width: canvas.width, height: canvas.height, tileDim: canvas.width / WALL_NUM_TILES_WIDTH };
+        this.ctx2D  = canvas.getContext('2d');
+        this.block = new Block(this.canvasDims);
+        // this.wall = new Wall
     }
 
     update(): void {
-        this.draw();
+        this.updateObjects();
+        this.clearCanvas();
+        this.drawObjects();
     }
 
-    draw(): void {
-        if (!!this._context) {
-            this._context.fillStyle = "black";
-            this._context.fillRect(20, 20, 50, 50);
-        }
-        else {
-            throw Error("No canvas context found!");
-        }
+    private drawObjects(): void {
+        if (this.ctx2D)
+            this.block.draw(this.ctx2D, this.canvasDims.tileDim);
+        else
+            throw new Error("No 2d context found...");
     }
 
-    finish(): void {
-        this._context?.restore();
+    private updateObjects(): void {
+        this.block.moveDown();
+    }
+
+    // finish(): void {
+    //     this.ctx2D?.restore();
+    // }
+
+    private clearCanvas(): void {
+        if (this.ctx2D) {
+            this.ctx2D.clearRect(0, 0, this.canvasDims.width, this.canvasDims.height)
+        }
     }
 }
 

@@ -1,20 +1,8 @@
 
-export interface GameAction {
-    type: string,
-    value: any
-}
-
 export enum GameStatus {
     running,
     paused,
     finished
-}
-
-export interface GameState {
-    status: GameStatus,
-    score: number,
-    statusText: string,
-    level: number
 }
 
 export enum GameCommand {
@@ -24,4 +12,37 @@ export enum GameCommand {
     rotate,
     start,
     finish
+}
+
+export interface GameState {
+    status: GameStatus,
+    score: number,
+    statusText: string,
+    level: number
+}
+
+export interface GameAction {
+    type: string,
+    value: any
+}
+
+export interface CanvasDimensions {
+    width: number,
+    height: number,
+    tileDim: number
+}
+
+export interface Position {
+    x: number,
+    y: number
+}
+
+export interface BlockShape {
+    tiles: Position[],
+    rotationPoint: Position
+}
+
+export interface BlockType {
+    name: string,
+    fillStyle: string
 }
