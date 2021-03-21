@@ -1,7 +1,7 @@
 import { useState, useEffect, useReducer, Reducer, useCallback } from 'react';
 import { Observable } from 'rxjs';
 import Score from '../components/Score';
-import { getCommand, getCanvasElement } from '../Services/utils';
+import { getKeyUpCommand, getKeyDownCommand, getCanvasElement } from '../Services/utils';
 import { gameInitialState, GAME_SPEED, canvas } from '../constants';
 import { GameAction, GameCommand, GameState, GameStatus } from '../models/interfaces';
 import './Game.scss';
@@ -12,21 +12,21 @@ import gameAction from '../store/actions/gameAction';
 
 function Game() {
     
-    const [input] = useState<Observable<number>>(getCommand());
+    const [keyDown] = useState<Observable<number>>(getKeyDownCommand());
+    const [keyUp] = useState<Observable<number>>(getKeyUpCommand());
     const [state, dispatch] = useReducer<Reducer<GameState, GameAction>, GameState>(gameReducer, gameInitialState, initState);
     const [board, setBoard] = useState<Board>();
     
     const loop = useCallback((board: Board) => {
         if (state.status === GameStatus.finished) {
             console.log('Game finished');
-            // board.finish();
         }
         else if (state.status === GameStatus.paused) {
             console.log('Game paused');
         }
         else {
             console.log('Game running');
-            board.update();
+            board.update(state);
         }
     },
     [state]);
@@ -34,7 +34,7 @@ function Game() {
     const startStop = useCallback(() => {
         if (state.status === GameStatus.finished) {
             dispatch({ type: gameAction.GAME_STATUS, value: GameStatus.running });
-            setBoard(new Board(getCanvasElement()));
+            setBoard(new Board(getCanvasElement(), dispatch, state));
         }
         else if (state.status === GameStatus.paused) {
             dispatch({ type: gameAction.GAME_STATUS, value: GameStatus.running });
@@ -46,7 +46,7 @@ function Game() {
             throw new Error("Unknown game status " + state.status);
         }
     },
-    [state.status]);
+    [state]);
 
     const finish = useCallback(() => {
         if (state.status !== GameStatus.finished) {
@@ -68,15 +68,26 @@ function Game() {
     },
     [startStop, finish, board]);
 
+    const handleReleaseCommand = useCallback((command: number) => {
+        if(command === GameCommand.speedUp) {
+            board?.resetBlockSpeed();
+        }
+    },
+    [board]);
+
     useEffect(() => {
         let loopId = setInterval(loop, GAME_SPEED, board);
         return () => clearInterval(loopId);
     }, [loop, board]);
 
     useEffect(() => {
-        const sub = input?.subscribe((command: number) => handleCommand(command));
-        return () => sub?.unsubscribe();
-    }, [input, handleCommand]);
+        const pressCommand = keyDown?.subscribe((command: number) => handleCommand(command));
+        const releaseCommand = keyUp?.subscribe((command: number) => handleReleaseCommand(command));
+        return () => {
+            pressCommand?.unsubscribe()
+            releaseCommand?.unsubscribe()
+        };
+    }, [keyDown, keyUp, handleCommand, handleReleaseCommand]);
 
     function initState(gameInitialState: GameState): GameState {
         return gameInitialState;

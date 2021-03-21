@@ -14,7 +14,7 @@ export default class Wall {
         this.tiles = wallTiles
     }
 
-    getTiles(): Position[][] {
+    get Tiles(): Position[][] {
         return this.tiles
     }
 

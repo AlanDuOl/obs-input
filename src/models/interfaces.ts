@@ -8,7 +8,7 @@ export enum GameStatus {
 export enum GameCommand {
     moveLeft,
     moveRight,
-    moveDown,
+    speedUp,
     rotate,
     start,
     finish

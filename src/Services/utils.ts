@@ -3,10 +3,18 @@ import { map, filter } from 'rxjs/operators';
 import { GameAction } from "../models/interfaces";
 import { commandKeys } from '../constants';
 
-export function getCommand(): Observable<number> {
+export function getKeyDownCommand(): Observable<number> {
     const eventObserable = fromEvent<KeyboardEvent>(document, 'keydown').pipe(
         map(evt => findCommand(evt.key)),
         filter(val => val !== -1)
+    );
+    return eventObserable;
+}
+
+export function getKeyUpCommand(): Observable<number> {
+    const eventObserable = fromEvent<KeyboardEvent>(document, 'keyup').pipe(
+        map(evt => findCommand(evt.key)),
+        filter(val => val === 2)
     );
     return eventObserable;
 }

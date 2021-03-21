@@ -3,37 +3,31 @@ import {
     blockType,
     BLOCK_DELTA_ROTATION, BLOCK_INITIAL_ROTATION,
     WALL_NUM_TILES_WIDTH,
-    blockInitialSpeed,
+    BLOCK_MAX_SPEED,
 } from '../constants';
 import { BlockShape, BlockType, CanvasDimensions, Position } from './interfaces.js'
 
 export default class Block {
 
-    private speed = 0
-    private type: BlockType = { name: "", fillStyle: "" }
-    private rotationAngle = 0
-    private rotationPoint: Position = { x: 0, y: 0 }
-    private tiles: Position[] = [];
+    private speed = 0;
+    private type: BlockType = { name: "", fillStyle: "" };
+    private rotationAngle = 0;
+    private rotationPoint: Position = { x: 0, y: 0 };
+    private tiles: Position[] = [];;
 
-    constructor(canvasDims: CanvasDimensions) {
+    constructor(canvasDims: CanvasDimensions, gameLevel: number) {
         let blockType = this.getType()
         let blockProps = this.getTiles(canvasDims, blockType)
-        this.speed = blockInitialSpeed.level1
+        this.speed = gameLevel;
         this.rotationAngle = BLOCK_INITIAL_ROTATION
         this.type = blockType
         this.tiles = blockProps.tiles
         this.rotationPoint = blockProps.rotationPoint
     }
 
-    // reset(canvasDims: CanvasDimensions, gameLevel: number) {
-    //     let blockType = this.getType()
-    //     let blockProps = this.getTiles(canvasDims, blockType)
-    //     this.speed = this.getInitialSpeed(gameLevel)
-    //     this.type = blockType
-    //     this.tiles = blockProps.tiles
-    //     this.rotationPoint = blockProps.rotationPoint
-    //     this.rotationAngle = BLOCK_INITIAL_ROTATION
-    // }
+    get Tiles(): Position[] {
+        return this.tiles;
+    }
 
     draw(ctx2D: CanvasRenderingContext2D, tileDim: number): void {
         ctx2D.fillStyle = this.type.fillStyle
@@ -149,91 +143,97 @@ export default class Block {
         return blockCanMove
     }
 
-    newSpeed(): void {
-        this.speed += BLOCK_DELTA_SPEED
+    speedUp(): void {
+        if (this.speed < BLOCK_MAX_SPEED) {
+            this.speed += BLOCK_DELTA_SPEED
+        }
+    }
+
+    resetSpeed(gameLevel: number): void {
+        this.speed = gameLevel;
     }
 
     rotate(canvasDims: CanvasDimensions, wall: Position[][]): void {
         if (this.type.name !== "O") {
-            let checkSpace = this.needToCheckSpace()
-            let canRotate = true
+            let checkSpace = this.needToCheckSpace();
+            let canRotate = true;
             if (checkSpace) {
                 // check available space
                 // if there is no available space set canRotate = false
-                canRotate = this.checkAvailableSpace(canvasDims.tileDim, wall)
+                canRotate = this.checkAvailableSpace(canvasDims.tileDim, wall);
             }
             if (canRotate) {
                 // rotate tiles
-                this.setNewRotationAngle()
-                this.rotateTiles()
-                this.adjustTiles(canvasDims.tileDim)
+                this.setNewRotationAngle();
+                this.rotateTiles();
+                this.adjustTiles(canvasDims.tileDim);
             }
         }
     }
 
     checkAvailableSpace(tileDim: number, wall: Position[][]): boolean {
 
-        let isThereEnoughSpace = false
+        let isThereEnoughSpace = false;
         try {
             // To get the block cols and rows
-            let blockDims = this.getRowsAndCols(tileDim)
+            let blockDims = this.getRowsAndCols(tileDim);
             // Loop in the wall only on needed rows using future width and height
             // The rows array is sorted to get the max value first
-            let startRow = blockDims.rows[0] > 0 ? (blockDims.rows[0] + 1) : 0
+            let startRow = blockDims.rows[0] > 0 ? (blockDims.rows[0] + 1) : 0;
             // The row in the loop (not included)
-            let endRow = (startRow - blockDims.rows.length) < 0 ? - 1 : (startRow - blockDims.rows.length)
+            let endRow = (startRow - blockDims.rows.length) < 0 ? - 1 : (startRow - blockDims.rows.length);
             // The cols array is sorted to get the smallest value first
-            let startCol = blockDims.cols[0]
+            let startCol = blockDims.cols[0];
             // The number of cols to be checked is equal to the future height (rows.length)
             // numCols is the loop range needed. It varies depending on the col value
-            let numCols = blockDims.rows.length
+            let numCols = blockDims.rows.length;
             let endCol = (startCol + numCols) > WALL_NUM_TILES_WIDTH ? WALL_NUM_TILES_WIDTH : (startCol + numCols)
-            let emptyCols = 0
+            let emptyCols = 0;
             for (let col = startCol; col < endCol; col++) {
-                let emptyRows = 0
+                let emptyRows = 0;
                 for (let row = startRow; row > endRow; row--) {
                     if (wall[row][col].x !== 400 && wall[row][col].y !== 400) {
-                        emptyRows = 0
+                        emptyRows = 0;
                     }
                     else {
-                        emptyRows++
+                        emptyRows++;
                     }
                 }
                 // cols.length is the future width
                 if (emptyRows === blockDims.rows.length) {
-                    emptyCols++
+                    emptyCols++;
                     // If the number of empty cols is >= than the future width the block can rotate
                     if (emptyCols === blockDims.rows.length) {
-                        isThereEnoughSpace = true
-                        break
+                        isThereEnoughSpace = true;
+                        break;
                     }
                 }
                 else {
-                    emptyCols = 0
+                    emptyCols = 0;
                 }
             }
         }
         catch (e) {
-            console.error(e.message)
+            console.error(e.message);
         }
-        return isThereEnoughSpace
+        return isThereEnoughSpace;
     }
 
     getRowsAndCols(tileDim: number): { rows: number[], cols: number[] } {
-        let tilesRows: number[] = []
-        let tilesCols: number[] = []
+        let tilesRows: number[] = [];
+        let tilesCols: number[] = [];
         this.tiles.forEach(tile => {
-            let row = Math.floor(tile.y / tileDim) < 0 ? 0 : Math.floor(tile.y / tileDim)
-            let col = Math.floor(tile.x / tileDim)
-            tilesRows.push(row)
-            tilesCols.push(col)
+            let row = Math.floor(tile.y / tileDim) < 0 ? 0 : Math.floor(tile.y / tileDim);
+            let col = Math.floor(tile.x / tileDim);
+            tilesRows.push(row);
+            tilesCols.push(col);
         })
         // Descending
-        tilesRows.sort((a, b) => b - a)
+        tilesRows.sort((a, b) => b - a);
         // Ascending
-        tilesCols.sort((a, b) => a - b)
-        let finalRows = new Set(tilesRows)
-        let finalCols = new Set(tilesCols)
+        tilesCols.sort((a, b) => a - b);
+        let finalRows = new Set(tilesRows);
+        let finalCols = new Set(tilesCols);
         return { rows: Array.from(finalRows.values()), cols: Array.from(finalCols.values()) }
     }
 
@@ -352,27 +352,6 @@ export default class Block {
         }
         else {
             this.rotationAngle += BLOCK_DELTA_ROTATION
-        }
-    }
-
-    getInitialSpeed(gameLevel: number): number {
-        switch (gameLevel) {
-            case 1:
-                return blockInitialSpeed.level1
-            case 2:
-                return blockInitialSpeed.level2
-            case 3:
-                return blockInitialSpeed.level3
-            case 4:
-                return blockInitialSpeed.level4
-            case 5:
-                return blockInitialSpeed.level5
-            case 6:
-                return blockInitialSpeed.level6
-            case 7:
-                return blockInitialSpeed.level7
-            default:
-                throw new Error("Unknown game level: " + gameLevel)
         }
     }
 

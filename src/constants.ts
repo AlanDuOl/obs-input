@@ -30,11 +30,12 @@ export const NUM_BLOCK_TYPES = 7
 export const BLOCK_NUM_TILES = 4
 export const WALL_NUM_TILES_WIDTH = 10
 export const WALL_NUM_TILES_HEIGHT = 21
-export const BLOCK_DELTA_SPEED = 4
+export const BLOCK_MAX_SPEED = 13
+export const BLOCK_DELTA_SPEED = 3
 export const BLOCK_DELTA_ROTATION = 90
 export const BLOCK_INITIAL_ROTATION = 0
-export const GAME_SPEED = 100;
-// export const GAME_SPEED = 20
+// export const GAME_SPEED = 100;
+export const GAME_SPEED = 50
 export const LEVEL_FACTOR = 100
 export const GAME_INITIAL_LEVEL = 1
 export const GAME_INITIAL_SCORE = 0
@@ -90,16 +91,6 @@ export const blockType = {
         name: "O",
         fillStyle: "rgb(0, 255, 0)"
     }
-}
-
-export const blockInitialSpeed = {
-    level1: 1,
-    level2: 2,
-    level3: 3,
-    level4: 4,
-    level5: 5,
-    level6: 6,
-    level7: 7
 }
 
 export const initialBlock = {
