@@ -1,6 +1,6 @@
 import { fromEvent, Observable } from "rxjs";
 import { map, filter } from 'rxjs/operators';
-import { GameAction } from "../models/interfaces";
+import { GameAction, Position } from "../models/interfaces";
 import { commandKeys } from '../constants';
 
 export function getKeyDownCommand(): Observable<number> {
@@ -39,4 +39,12 @@ export function getCanvasElement(): HTMLCanvasElement {
     const el: HTMLCanvasElement | null = document.querySelector('canvas');
     if (!!el) return el;
     throw Error('No canvas element found');
+}
+
+export function createTilesCopy(tiles: Position[]): Position[] {
+    let tilesCopy: Position[] = [];
+        tiles.forEach(tile => {
+            tilesCopy.push({ x: tile.x, y: tile.y });
+        });
+    return tilesCopy;
 }

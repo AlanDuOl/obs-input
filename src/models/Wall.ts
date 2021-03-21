@@ -1,4 +1,4 @@
-import { WALL_NUM_TILES_WIDTH, WALL_NUM_TILES_HEIGHT, BLOCK_NUM_TILES } from '../constants'
+import { WALL_NUM_TILES_WIDTH, WALL_NUM_TILES_HEIGHT, TILE_DIM } from '../constants'
 import { Position } from './interfaces.js'
 
 
@@ -18,14 +18,14 @@ export default class Wall {
         return this.tiles
     }
 
-    draw(ctx2D: CanvasRenderingContext2D, tileDim: number): void {
+    draw(ctx2D: CanvasRenderingContext2D): void {
         try {
             for (let row = 0; row < WALL_NUM_TILES_HEIGHT; row++) {
                 for (let col = 0; col < WALL_NUM_TILES_WIDTH; col++) {
                     if (this.tiles[row][col].x < 400 && this.tiles[row][col].y < 400) {
                         ctx2D.beginPath()
                         ctx2D.fillStyle = "rgba(0, 0, 255, 1)"
-                        ctx2D.rect(this.tiles[row][col].x, this.tiles[row][col].y, tileDim, tileDim)
+                        ctx2D.rect(this.tiles[row][col].x, this.tiles[row][col].y, TILE_DIM, TILE_DIM);
                         ctx2D.fill()
                     }
                 }
@@ -36,14 +36,14 @@ export default class Wall {
         }
     }
 
-    update(blockTiles: Position[], tileDim: number): number {
+    update(blockTiles: Position[]): number {
         let numRemovedRows = 0
-        this.addTiles(blockTiles, tileDim)
-        numRemovedRows = this.updateTiles(tileDim, numRemovedRows)
+        this.addTiles(blockTiles)
+        numRemovedRows = this.updateTiles(numRemovedRows)
         return numRemovedRows
     }
 
-    updateTiles(tileDim: number, initialValue: number): number {
+    updateTiles(initialValue: number): number {
         // this is to know how many lines have been removed and is used to update the score/level
         let numRemovedRows = initialValue
         try {
@@ -58,9 +58,9 @@ export default class Wall {
                             // Remove row where all tiles are not empty
                             this.removeTiles(row)
                             // Move down tiles above the emptied row
-                            this.moveTilesDown(row - 1, tileDim)
+                            this.moveTilesDown(row - 1)
                             // Recall self increasing numRemovedRows to see if there are more rows to remove
-                            numRemovedRows = this.updateTiles(tileDim, ++numRemovedRows)
+                            numRemovedRows = this.updateTiles(++numRemovedRows)
                         }
                     }
                 }
@@ -72,23 +72,23 @@ export default class Wall {
         return numRemovedRows
     }
 
-    addTiles(blockTiles: Position[], tileDim: number): void {
+    addTiles(blockTiles: Position[]): void {
         try {
             blockTiles.forEach(tile => {
                 // Get the column and row numbers
-                let col = Math.floor(tile.x / tileDim)
-                let row = Math.floor(tile.y / tileDim)
-                // Set the tile x and y position values in the range of (15 > col >= 0) and (21 > row >= -4)
-                if (col < WALL_NUM_TILES_WIDTH && col >= 0 && row < WALL_NUM_TILES_HEIGHT && row >= - BLOCK_NUM_TILES) {
-                    // Add 4 to every row index so no index is smaller than 0 and grater than 21
-                    // Negative y position is needed to check for game over
-                    // Because the game over check must happen after the wall updates
-                    this.tiles[row + BLOCK_NUM_TILES][col] = { x: col * tileDim, y: row * tileDim }
+                let col = Math.floor(tile.x / TILE_DIM)
+                let row = Math.floor(tile.y / TILE_DIM)
+                // If the col and row are inside the canvas range, add the tile to the wall
+                if (col < WALL_NUM_TILES_WIDTH && col >= 0 && row < WALL_NUM_TILES_HEIGHT && row >= 0) {
+                    this.tiles[row][col] = { x: col * TILE_DIM, y: row * TILE_DIM }
+                }
+                else {
+                    throw new Error('Game Over!!');
                 }
             })
         }
         catch (e) {
-            console.error(e.message)
+            console.error(e.message);
         }
     }
 
@@ -97,16 +97,16 @@ export default class Wall {
         this.tiles[rowNumber] = this.getEmptyRow()
     }
 
-    moveTilesDown(startRow: number, tileDim: number): void {
+    moveTilesDown(startRow: number): void {
         try {
             let emptyRow = this.getEmptyRow()
             // Loop in rows from bottom to top
             for (let row = startRow; row >= 0; row--) {
-                // Loop in the columns and and increase y postion by tileDim where the tile is not empty
+                // Loop in the columns and and increase y postion by TILE_DIM where the tile is not empty
                 for (let col = 0; col < WALL_NUM_TILES_WIDTH; col++) {
                     // if ((wall[row][col].x || wall[row][col].x === 0) && (wall[row][col].y || wall[row][col].y === 0)) {
                     if (this.tiles[row][col].x < 400 && this.tiles[row][col].y < 400) {
-                        this.tiles[row][col].y += tileDim
+                        this.tiles[row][col].y += TILE_DIM
                     }
                 }
                 // Make the bellow row be equal to the current row

@@ -1,4 +1,4 @@
-import { BLOCK_NUM_TILES, WALL_NUM_TILES_HEIGHT, WALL_NUM_TILES_WIDTH } from "../constants";
+import { BLOCK_NUM_TILES, TILE_DIM, WALL_NUM_TILES_HEIGHT, WALL_NUM_TILES_WIDTH } from "../constants";
 import Block from "./Block";
 import Wall from "./Wall";
 import { CanvasDimensions, GameAction, GameCommand, GameState, GameStatus, Position } from "./interfaces";
@@ -16,7 +16,7 @@ export default class Board {
     private gameState: GameState;
 
     constructor(canvas: HTMLCanvasElement, dispatch: React.Dispatch<GameAction>, state: GameState) {
-        this.canvasDims = { width: canvas.width, height: canvas.height, tileDim: canvas.width / WALL_NUM_TILES_WIDTH };
+        this.canvasDims = { width: canvas.width, height: canvas.height };
         this.ctx2D  = canvas.getContext('2d');
         this.block = new Block(this.canvasDims, state.level);
         this.wall = new Wall();
@@ -40,13 +40,13 @@ export default class Board {
                 this.block.speedUp();
                 break;
             case GameCommand.moveLeft:
-                this.block.moveLeft(this.canvasDims.tileDim, this.wall.Tiles);
+                this.block.moveLeft(this.wall.Tiles);
                 break;
             case GameCommand.moveRight:
-                this.block.moveRight(this.canvasDims.tileDim, this.wall.Tiles);
+                this.block.moveRight(this.wall.Tiles);
                 break;
             case GameCommand.rotate:
-                this.block.rotate(this.canvasDims, this.wall.Tiles);
+                this.block.rotate(this.wall.Tiles);
                 break;
             default:
                 throw new Error('Unknown command ' + command);
@@ -59,8 +59,8 @@ export default class Board {
 
     private drawObjects(): void {
         if (!!this.ctx2D) {
-            this.block.draw(this.ctx2D, this.canvasDims.tileDim);
-            this.wall.draw(this.ctx2D, this.canvasDims.tileDim);
+            this.block.draw(this.ctx2D);
+            this.wall.draw(this.ctx2D);
         }
         else {
             throw new Error("No 2d context found...");
@@ -73,7 +73,7 @@ export default class Board {
         // colligion
         if (collisionTiles.length === BLOCK_NUM_TILES) {
             // Update the wall
-            let numRemovedRows = this.wall.update(collisionTiles, this.canvasDims.tileDim);
+            let numRemovedRows = this.wall.update(collisionTiles);
             // If a row was removed the info should be updated (score) and checked to update (level, record)
             // TODO
             if (numRemovedRows > 0) {
@@ -99,9 +99,9 @@ export default class Board {
                 for (let row = 0; row < WALL_NUM_TILES_HEIGHT; row++) {
                     for (let col = 0; col < WALL_NUM_TILES_WIDTH; col++) {
                         // If there was a collision, add the tiles to the wall and return true
-                        if ((tile.x === this.wall.Tiles[row][col].x && tile.y + this.canvasDims.tileDim > this.wall.Tiles[row][col].y
-                            && tile.y + this.canvasDims.tileDim < this.wall.Tiles[row][col].y + this.canvasDims.tileDim * 2)
-                            || tile.y + this.canvasDims.tileDim > this.canvasDims.height) {
+                        if ((tile.x === this.wall.Tiles[row][col].x && tile.y + TILE_DIM > this.wall.Tiles[row][col].y
+                            && tile.y + TILE_DIM < this.wall.Tiles[row][col].y + TILE_DIM * 2)
+                            || tile.y + TILE_DIM > this.canvasDims.height) {
                             // make o copy of the tiles array
                             collisionTiles = this.block.Tiles.slice();
                             break loop1;

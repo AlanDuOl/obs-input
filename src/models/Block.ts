@@ -4,7 +4,9 @@ import {
     BLOCK_DELTA_ROTATION, BLOCK_INITIAL_ROTATION,
     WALL_NUM_TILES_WIDTH,
     BLOCK_MAX_SPEED,
+    TILE_DIM,
 } from '../constants';
+import { createTilesCopy } from '../Services/utils';
 import { BlockShape, BlockType, CanvasDimensions, Position } from './interfaces.js'
 
 export default class Block {
@@ -29,11 +31,11 @@ export default class Block {
         return this.tiles;
     }
 
-    draw(ctx2D: CanvasRenderingContext2D, tileDim: number): void {
+    draw(ctx2D: CanvasRenderingContext2D): void {
         ctx2D.fillStyle = this.type.fillStyle
         ctx2D.beginPath()
         this.tiles.forEach(tile => {
-            ctx2D.rect(tile.x, tile.y, tileDim, tileDim)
+            ctx2D.rect(tile.x, tile.y, TILE_DIM, TILE_DIM)
         })
         ctx2D.fill()
     }
@@ -45,37 +47,37 @@ export default class Block {
         this.rotationPoint.y += this.speed
     }
 
-    moveLeft(tileDim: number, wall: Position[][]): void {
-        let canBlockMove = this.checkMoveLeft(tileDim, wall)
+    moveLeft(wall: Position[][]): void {
+        let canBlockMove = this.checkMoveLeft(wall)
         // If block can move move left
         if (canBlockMove) {
             this.tiles.forEach(tile => {
-                tile.x -= tileDim
+                tile.x -= TILE_DIM
             })
-            this.rotationPoint.x -= tileDim
+            this.rotationPoint.x -= TILE_DIM
         }
     }
 
-    moveRight(tileDim: number, wall: Position[][]): void {
-        let canBlockMove = this.checkMoveRight(tileDim, wall)
+    moveRight(wall: Position[][]): void {
+        let canBlockMove = this.checkMoveRight(wall);
         // If block can move move right
         if (canBlockMove) {
             this.tiles.forEach(tile => {
-                tile.x += tileDim
+                tile.x += TILE_DIM
             })
-            this.rotationPoint.x += tileDim
+            this.rotationPoint.x += TILE_DIM
         }
     }
 
-    checkMoveLeft(tileDim: number, wall: Position[][]): boolean {
+    checkMoveLeft(wall: Position[][]): boolean {
         let blockCanMove = true
         let keepLooping = true
         // Check if there is a tile that can't move
         try {
             this.tiles.forEach(tile => {
                 if (keepLooping) {
-                    let tileRow = Math.floor(tile.y / tileDim)
-                    let tileCol = Math.floor(tile.x / tileDim)
+                    let tileRow = Math.floor(tile.y / TILE_DIM)
+                    let tileCol = Math.floor(tile.x / TILE_DIM)
                     if (tileCol > 0) {
                         let endRow = tileRow < 1 ? 1 : tileRow + 1
                         let endCol = tileCol - 1
@@ -105,15 +107,15 @@ export default class Block {
         return blockCanMove
     }
 
-    checkMoveRight(tileDim: number, wall: Position[][]): boolean {
+    checkMoveRight(wall: Position[][]): boolean {
         let blockCanMove = true
         let keepLooping = true
         // Check if there is a tile that can't move
         try {
             this.tiles.forEach(tile => {
                 if (keepLooping) {
-                    let tileRow = Math.floor(tile.y / tileDim)
-                    let tileCol = Math.floor(tile.x / tileDim)
+                    let tileRow = Math.floor(tile.y / TILE_DIM)
+                    let tileCol = Math.floor(tile.x / TILE_DIM)
                     if (tileCol < WALL_NUM_TILES_WIDTH - 1) {
                         let endRow = tileRow < 1 ? 1 : tileRow + 1
                         let endCol = tileCol + 1
@@ -153,105 +155,77 @@ export default class Block {
         this.speed = gameLevel;
     }
 
-    rotate(canvasDims: CanvasDimensions, wall: Position[][]): void {
+    rotate(wall: Position[][]): void {
         if (this.type.name !== "O") {
-            let checkSpace = this.needToCheckSpace();
-            let canRotate = true;
-            if (checkSpace) {
-                // check available space
-                // if there is no available space set canRotate = false
-                canRotate = this.checkAvailableSpace(canvasDims.tileDim, wall);
-            }
-            if (canRotate) {
-                // rotate tiles
+            const roratedTiles = this.getRotateTiles();
+            const correctedTiles = this.correctTilesPosition(roratedTiles);
+            // check for collision after rotation
+            // if no collision happens, apply the changes
+            if (!this.checkCollision(correctedTiles, wall)) {
+                this.tiles = correctedTiles;
                 this.setNewRotationAngle();
-                this.rotateTiles();
-                this.adjustTiles(canvasDims.tileDim);
+                this.correctRotationPoint();
             }
         }
     }
 
-    checkAvailableSpace(tileDim: number, wall: Position[][]): boolean {
-
-        let isThereEnoughSpace = false;
+    checkCollision(tiles: Position[], wall: Position[][]): boolean {
+        let collision = false;
         try {
             // To get the block cols and rows
-            let blockDims = this.getRowsAndCols(tileDim);
-            // Loop in the wall only on needed rows using future width and height
-            // The rows array is sorted to get the max value first
-            let startRow = blockDims.rows[0] > 0 ? (blockDims.rows[0] + 1) : 0;
-            // The row in the loop (not included)
-            let endRow = (startRow - blockDims.rows.length) < 0 ? - 1 : (startRow - blockDims.rows.length);
-            // The cols array is sorted to get the smallest value first
-            let startCol = blockDims.cols[0];
-            // The number of cols to be checked is equal to the future height (rows.length)
-            // numCols is the loop range needed. It varies depending on the col value
-            let numCols = blockDims.rows.length;
-            let endCol = (startCol + numCols) > WALL_NUM_TILES_WIDTH ? WALL_NUM_TILES_WIDTH : (startCol + numCols)
-            let emptyCols = 0;
-            for (let col = startCol; col < endCol; col++) {
-                let emptyRows = 0;
-                for (let row = startRow; row > endRow; row--) {
-                    if (wall[row][col].x !== 400 && wall[row][col].y !== 400) {
-                        emptyRows = 0;
-                    }
-                    else {
-                        emptyRows++;
-                    }
+            let blockDims = this.getRowsAndCols(tiles);
+            // check if cols positions are inside the canvas
+            blockDims.cols.forEach(col => {
+                if (col < 0 || col > WALL_NUM_TILES_WIDTH - 1) {
+                    collision = true;
                 }
-                // cols.length is the future width
-                if (emptyRows === blockDims.rows.length) {
-                    emptyCols++;
-                    // If the number of empty cols is >= than the future width the block can rotate
-                    if (emptyCols === blockDims.rows.length) {
-                        isThereEnoughSpace = true;
-                        break;
+            });
+            // If no collision happened loop in the wall
+            if (!collision) {
+                loop1:
+                for (let col = blockDims.cols[0]; col <= blockDims.cols[blockDims.cols.length - 1]; col++) {
+                    for (let row = blockDims.rows[0]; row <= blockDims.rows[blockDims.rows.length - 1] + 1; row++) {
+                        if (wall[col][row].x !== 400 && wall[col][row].y !== 400) {
+                            collision = true;
+                            break loop1;
+                        }
                     }
-                }
-                else {
-                    emptyCols = 0;
                 }
             }
         }
         catch (e) {
             console.error(e.message);
         }
-        return isThereEnoughSpace;
+        console.log('collision', collision)
+        return collision;
     }
 
-    getRowsAndCols(tileDim: number): { rows: number[], cols: number[] } {
+    getRowsAndCols(tiles: Position[]): { rows: number[], cols: number[] } {
         let tilesRows: number[] = [];
         let tilesCols: number[] = [];
-        this.tiles.forEach(tile => {
-            let row = Math.floor(tile.y / tileDim) < 0 ? 0 : Math.floor(tile.y / tileDim);
-            let col = Math.floor(tile.x / tileDim);
-            tilesRows.push(row);
+        tiles.forEach(tile => {
+            let row = Math.floor(tile.y / TILE_DIM);
+            let col = Math.floor(tile.x / TILE_DIM);
+            // save only row values inside the canvas
+            if (row >= 0) {
+                tilesRows.push(row);
+            }
             tilesCols.push(col);
         })
-        // Descending
-        tilesRows.sort((a, b) => b - a);
         // Ascending
-        tilesCols.sort((a, b) => a - b);
+        tilesRows.sort();
+        tilesCols.sort();
         let finalRows = new Set(tilesRows);
         let finalCols = new Set(tilesCols);
         return { rows: Array.from(finalRows.values()), cols: Array.from(finalCols.values()) }
     }
 
-    needToCheckSpace(): boolean {
-        // If the current angle is 90 or 270 there is no need to check for available space
-        if (this.rotationAngle === 90 || this.rotationAngle === 270) {
-            return false
-        }
-        else {
-            return true
-        }
-    }
-
-    rotateTiles(): void {
+    getRotateTiles(): Position[] {
+        const tiles = createTilesCopy(this.tiles);
         // Rotate the points around the rotation point
         try {
             let angle = (Math.PI / 180) * BLOCK_DELTA_ROTATION
-            this.tiles.forEach((tile: Position) => {
+            tiles.forEach((tile: Position) => {
                 // Make a copy to avoid using changed tile.x in tile.y new value
                 let currentTile = Object.assign({}, tile)
                 // Rotate tile.x around rotationPoint
@@ -263,87 +237,86 @@ export default class Block {
         catch (e) {
             console.error(e.message)
         }
+        return tiles;
     }
 
-    adjustTiles(tileDim: number): void {
-        this.correctTilesPosition(tileDim)
-        this.correctRotationPoint(tileDim)
-    }
-
-    correctTilesPosition(tileDim: number): void {
+    correctTilesPosition(tiles: Position[]): Position[] {
+        const correctedTiles = createTilesCopy(tiles);
+        const rotationAngle = this.getNewRotationAngle();
         // Correct rotated points of L, J, Z, S blocks
         if (this.type.name !== "I" && this.type.name !== "O") {
-            this.tiles.forEach((tile: Position) => {
-                switch (this.rotationAngle) {
+            correctedTiles.forEach((tile: Position) => {
+                switch (rotationAngle) {
                     case 0:
-                        tile.x -= tileDim
-                        tile.y += tileDim
+                        tile.x -= TILE_DIM
+                        tile.y += TILE_DIM
                         break
                     case 90:
-                        tile.x -= tileDim
+                        tile.x -= TILE_DIM
                         break
                     case 180:
-                        tile.y -= tileDim * 2
+                        tile.y -= TILE_DIM * 2
                         break
                     case 270:
-                        tile.x += tileDim * 2
-                        tile.y += tileDim
+                        tile.x += TILE_DIM * 2
+                        tile.y += TILE_DIM
                         break
                     default:
-                        throw new Error("Unknown block rotation angle..." + this.rotationAngle)
+                        throw new Error("Unknown block rotation angle..." + rotationAngle)
                 }
             })
         }
         // Correct rotated points of I block
         else if (this.type.name === "I") {
-            this.tiles.forEach((tile: Position) => {
-                switch (this.rotationAngle) {
+            correctedTiles.forEach((tile: Position) => {
+                switch (rotationAngle) {
                     case 0:
-                        tile.x -= tileDim * 3
+                        tile.x -= TILE_DIM * 3
                         break
                     case 90:
                         break
                     case 180:
-                        tile.y -= tileDim * 3
+                        tile.y -= TILE_DIM * 3
                         break
                     case 270:
-                        tile.x += tileDim * 3
-                        tile.y += tileDim * 3
+                        tile.x += TILE_DIM * 3
+                        tile.y += TILE_DIM * 3
                         break
                     default:
-                        throw new Error("Unknown block rotation angle..." + this.rotationAngle)
+                        throw new Error("Unknown block rotation angle..." + rotationAngle)
                 }
             })
         }
+        return correctedTiles;
     }
 
-    correctRotationPoint(tileDim: number): void {
-        let newRotationPoint = { x: 0, y: 0 }
-        let centralPoint = this.tiles[3]
+    correctRotationPoint(): void {
+        let newRotationPoint = { x: 0, y: 0 };
+        let centralPoint = this.tiles[3];
         // If the block is T or Z the rotation point is updated differently
         if (this.type.name === "T" || this.type.name === "Z") {
             switch (this.rotationAngle) {
                 case 0:
-                    newRotationPoint = { x: centralPoint.x, y: centralPoint.y + tileDim }
-                    break
+                    newRotationPoint = { x: centralPoint.x, y: centralPoint.y + TILE_DIM };
+                    break;
                 case 90:
-                    newRotationPoint = { x: centralPoint.x - tileDim, y: centralPoint.y }
+                    newRotationPoint = { x: centralPoint.x - TILE_DIM, y: centralPoint.y }
                     break
                 case 180:
-                    newRotationPoint = { x: centralPoint.x, y: centralPoint.y - tileDim }
-                    break
+                    newRotationPoint = { x: centralPoint.x, y: centralPoint.y - TILE_DIM };
+                    break;
                 case 270:
-                    newRotationPoint = { x: centralPoint.x + tileDim, y: centralPoint.y }
-                    break
+                    newRotationPoint = { x: centralPoint.x + TILE_DIM, y: centralPoint.y };
+                    break;
                 default:
-                    throw new Error("Unknown rotation angle for rotation point... " + this.rotationAngle)
+                    throw new Error("Unknown rotation angle for rotation point... " + this.rotationAngle);
             }
         }
         // All other blocks have the central point equalt to point 4
         else {
-            newRotationPoint = { x: centralPoint.x, y: centralPoint.y }
+            newRotationPoint = { x: centralPoint.x, y: centralPoint.y };
         }
-        this.rotationPoint = newRotationPoint
+        this.rotationPoint = newRotationPoint;
     }
 
     setNewRotationAngle(): void {
@@ -353,6 +326,17 @@ export default class Block {
         else {
             this.rotationAngle += BLOCK_DELTA_ROTATION
         }
+    }
+
+    getNewRotationAngle(): number {
+        if (this.rotationAngle >= 270) {
+            return 0;
+        }
+        return this.rotationAngle + BLOCK_DELTA_ROTATION;
+    }
+
+    setRotationAngle(angle: number): void {
+        this.rotationAngle = angle;
     }
 
     getTiles(canvasDims: CanvasDimensions, type: BlockType): BlockShape {
@@ -380,12 +364,12 @@ export default class Block {
         let leftMostX = canvasDims.width / 2
         let block = {
             tiles: [
-                { x: leftMostX, y: - canvasDims.tileDim * 4 },
-                { x: leftMostX, y: - canvasDims.tileDim * 3 },
-                { x: leftMostX, y: - canvasDims.tileDim * 2 },
-                { x: leftMostX, y: - canvasDims.tileDim }
+                { x: leftMostX, y: - TILE_DIM * 4 },
+                { x: leftMostX, y: - TILE_DIM * 3 },
+                { x: leftMostX, y: - TILE_DIM * 2 },
+                { x: leftMostX, y: - TILE_DIM }
             ],
-            rotationPoint: { x: leftMostX, y: - canvasDims.tileDim }
+            rotationPoint: { x: leftMostX, y: - TILE_DIM }
         }
         block.tiles.push()
         block.tiles.push()
@@ -395,85 +379,85 @@ export default class Block {
     }
 
     getS(canvasDims: CanvasDimensions): BlockShape {
-        let leftMostX = canvasDims.width / 2 - canvasDims.tileDim
+        let leftMostX = canvasDims.width / 2 - TILE_DIM
         let block = {
             tiles: [
-                { x: leftMostX, y: - canvasDims.tileDim * 3 },
-                { x: leftMostX, y: - canvasDims.tileDim * 2 },
-                { x: leftMostX + canvasDims.tileDim, y: - canvasDims.tileDim * 2 },
-                { x: leftMostX + canvasDims.tileDim, y: - canvasDims.tileDim }
+                { x: leftMostX, y: - TILE_DIM * 3 },
+                { x: leftMostX, y: - TILE_DIM * 2 },
+                { x: leftMostX + TILE_DIM, y: - TILE_DIM * 2 },
+                { x: leftMostX + TILE_DIM, y: - TILE_DIM }
             ],
-            rotationPoint: { x: leftMostX + canvasDims.tileDim, y: - canvasDims.tileDim }
+            rotationPoint: { x: leftMostX + TILE_DIM, y: - TILE_DIM }
         }
         return block
     }
 
     getZ(canvasDims: CanvasDimensions): BlockShape {
-        let leftMostX = canvasDims.width / 2 - canvasDims.tileDim
+        let leftMostX = canvasDims.width / 2 - TILE_DIM
         let block = {
             tiles: [
-                { x: leftMostX, y: - canvasDims.tileDim * 2 },
-                { x: leftMostX, y: - canvasDims.tileDim },
-                { x: leftMostX + canvasDims.tileDim, y: - canvasDims.tileDim * 3 },
-                { x: leftMostX + canvasDims.tileDim, y: - canvasDims.tileDim * 2 }
+                { x: leftMostX, y: - TILE_DIM * 2 },
+                { x: leftMostX, y: - TILE_DIM },
+                { x: leftMostX + TILE_DIM, y: - TILE_DIM * 3 },
+                { x: leftMostX + TILE_DIM, y: - TILE_DIM * 2 }
             ],
-            rotationPoint: { x: leftMostX + canvasDims.tileDim, y: - canvasDims.tileDim * 2 }
+            rotationPoint: { x: leftMostX + TILE_DIM, y: - TILE_DIM * 2 }
         }
         return block
     }
 
     getT(canvasDims: CanvasDimensions): BlockShape {
-        let leftMostX = canvasDims.width / 2 - canvasDims.tileDim
+        let leftMostX = canvasDims.width / 2 - TILE_DIM
         let block = {
             tiles: [
-                { x: leftMostX, y: - canvasDims.tileDim * 3 },
-                { x: leftMostX, y: - canvasDims.tileDim * 2 },
-                { x: leftMostX, y: - canvasDims.tileDim },
-                { x: leftMostX + canvasDims.tileDim, y: - canvasDims.tileDim * 2 }
+                { x: leftMostX, y: - TILE_DIM * 3 },
+                { x: leftMostX, y: - TILE_DIM * 2 },
+                { x: leftMostX, y: - TILE_DIM },
+                { x: leftMostX + TILE_DIM, y: - TILE_DIM * 2 }
             ],
-            rotationPoint: { x: leftMostX + canvasDims.tileDim, y: - canvasDims.tileDim * 2 }
+            rotationPoint: { x: leftMostX + TILE_DIM, y: - TILE_DIM * 2 }
         }
         return block
     }
 
     getL(canvasDims: CanvasDimensions): BlockShape {
-        let leftMostX = canvasDims.width / 2 - canvasDims.tileDim
+        let leftMostX = canvasDims.width / 2 - TILE_DIM
         let block = {
             tiles: [
-                { x: leftMostX, y: - canvasDims.tileDim * 3 },
-                { x: leftMostX, y: - canvasDims.tileDim * 2 },
-                { x: leftMostX, y: - canvasDims.tileDim },
-                { x: leftMostX + canvasDims.tileDim, y: - canvasDims.tileDim }
+                { x: leftMostX, y: - TILE_DIM * 3 },
+                { x: leftMostX, y: - TILE_DIM * 2 },
+                { x: leftMostX, y: - TILE_DIM },
+                { x: leftMostX + TILE_DIM, y: - TILE_DIM }
             ],
-            rotationPoint: { x: leftMostX + canvasDims.tileDim, y: - canvasDims.tileDim }
+            rotationPoint: { x: leftMostX + TILE_DIM, y: - TILE_DIM }
         }
         return block
     }
 
     getJ(canvasDims: CanvasDimensions): BlockShape {
-        let leftMostX = canvasDims.width / 2 - canvasDims.tileDim
+        let leftMostX = canvasDims.width / 2 - TILE_DIM
         let block = {
             tiles: [
-                { x: leftMostX, y: - canvasDims.tileDim },
-                { x: leftMostX + canvasDims.tileDim, y: - canvasDims.tileDim * 3 },
-                { x: leftMostX + canvasDims.tileDim, y: - canvasDims.tileDim * 2 },
-                { x: leftMostX + canvasDims.tileDim, y: - canvasDims.tileDim }
+                { x: leftMostX, y: - TILE_DIM },
+                { x: leftMostX + TILE_DIM, y: - TILE_DIM * 3 },
+                { x: leftMostX + TILE_DIM, y: - TILE_DIM * 2 },
+                { x: leftMostX + TILE_DIM, y: - TILE_DIM }
             ],
-            rotationPoint: { x: leftMostX + canvasDims.tileDim, y: - canvasDims.tileDim }
+            rotationPoint: { x: leftMostX + TILE_DIM, y: - TILE_DIM }
         }
         return block
     }
 
     getO(canvasDims: CanvasDimensions): BlockShape {
-        let leftMostX = canvasDims.width / 2 - canvasDims.tileDim
+        let leftMostX = canvasDims.width / 2 - TILE_DIM
         let block = {
             tiles: [
-                { x: leftMostX, y: - canvasDims.tileDim * 2 },
-                { x: leftMostX, y: - canvasDims.tileDim },
-                { x: leftMostX + canvasDims.tileDim, y: - canvasDims.tileDim * 2 },
-                { x: leftMostX + canvasDims.tileDim, y: - canvasDims.tileDim }
+                { x: leftMostX, y: - TILE_DIM * 2 },
+                { x: leftMostX, y: - TILE_DIM },
+                { x: leftMostX + TILE_DIM, y: - TILE_DIM * 2 },
+                { x: leftMostX + TILE_DIM, y: - TILE_DIM }
             ],
-            rotationPoint: { x: leftMostX + canvasDims.tileDim, y: - canvasDims.tileDim }
+            rotationPoint: { x: leftMostX + TILE_DIM, y: - TILE_DIM }
         }
         return block
     }

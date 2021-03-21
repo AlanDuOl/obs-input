@@ -28,8 +28,7 @@ export interface GameAction {
 
 export interface CanvasDimensions {
     width: number,
-    height: number,
-    tileDim: number
+    height: number
 }
 
 export interface Position {
