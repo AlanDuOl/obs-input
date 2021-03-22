@@ -42,9 +42,18 @@ export function getCanvasElement(): HTMLCanvasElement {
 }
 
 export function createTilesCopy(tiles: Position[]): Position[] {
-    let tilesCopy: Position[] = [];
+    const tilesCopy: Position[] = [];
         tiles.forEach(tile => {
             tilesCopy.push({ x: tile.x, y: tile.y });
         });
     return tilesCopy;
+}
+
+export function createWallCopy(wall: Position[][]): Position[][] {
+    const wallCopy: Position[][] = [];
+    wall.forEach(row => {
+        const rowCopy = createTilesCopy(row);
+        wallCopy.push(rowCopy);
+    });
+    return wallCopy;
 }

@@ -1,0 +1,26 @@
+title Game Flow
+
+actor Player
+entity Board
+entity Block
+entity Wall
+entity Score
+entity Canvas
+
+Player->Board:Start game
+
+loop Game
+seq update
+Board->Block: Move down
+Board->Canvas: Clear
+Board->Canvas: Draw Block and Wall
+box over Board: Check game over
+alt colision
+Board->Block: Create new Block
+Board->Wall: Update Wall
+Board->Score: Update Score
+else no colision
+box over Board: Do nothing
+end
+end
+end

@@ -123,8 +123,7 @@ export default class Wall {
     getEmptyRow(): Position[] {
         let wallRow = []
         for (let col = 0; col < WALL_NUM_TILES_WIDTH; col++) {
-            let emptyTile = { x: 400, y: 400 }
-            wallRow.push(emptyTile)
+            wallRow.push({ x: 400, y: 400 });
         }
         if (wallRow.length === WALL_NUM_TILES_WIDTH) {
             return wallRow

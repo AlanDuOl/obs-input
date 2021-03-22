@@ -5,6 +5,7 @@ import {
     WALL_NUM_TILES_WIDTH,
     BLOCK_MAX_SPEED,
     TILE_DIM,
+    WALL_EMPTY_VALUE,
 } from '../constants';
 import { createTilesCopy } from '../Services/utils';
 import { BlockShape, BlockType, CanvasDimensions, Position } from './interfaces.js'
@@ -122,12 +123,9 @@ export default class Block {
                         if (tileRow >= 0) {
                             for (let row = tileRow; row <= endRow; row++) {
                                 if (wall[row][endCol].x !== 400 && wall[row][endCol].y !== 400) {
-                                    // If blockTileCol is bigger than wallTileCol + 1 there is no need to check with that wallTile
-                                    // if (tileCol === col - 1 && tileRow >= row - 1 && tileRow <= row + 1) {
-                                        blockCanMove = false
-                                        keepLooping = false
-                                        break
-                                    // }
+                                    blockCanMove = false
+                                    keepLooping = false
+                                    break
                                 }
                             }
                         }
@@ -173,19 +171,19 @@ export default class Block {
         let collision = false;
         try {
             // To get the block cols and rows
-            let blockDims = this.getRowsAndCols(tiles);
-            // check if cols positions are inside the canvas
+            const blockDims = this.getRowsAndCols(tiles);
             blockDims.cols.forEach(col => {
-                if (col < 0 || col > WALL_NUM_TILES_WIDTH - 1) {
+                if (col < 0 || col >= WALL_NUM_TILES_WIDTH) {
                     collision = true;
                 }
             });
             // If no collision happened loop in the wall
             if (!collision) {
                 loop1:
-                for (let col = blockDims.cols[0]; col <= blockDims.cols[blockDims.cols.length - 1]; col++) {
-                    for (let row = blockDims.rows[0]; row <= blockDims.rows[blockDims.rows.length - 1] + 1; row++) {
-                        if (wall[col][row].x !== 400 && wall[col][row].y !== 400) {
+                for (let row = blockDims.rows[0]; row <= blockDims.rows[blockDims.rows.length - 1] + 1; row++) {
+                    for (let col = blockDims.cols[0]; col <= blockDims.cols[blockDims.cols.length - 1]; col++) {
+                        console.log('x', wall[row][col].x, 'y', wall[row][col].y)
+                        if (wall[row][col].x !== WALL_EMPTY_VALUE && wall[row][col].y !== WALL_EMPTY_VALUE) {
                             collision = true;
                             break loop1;
                         }
