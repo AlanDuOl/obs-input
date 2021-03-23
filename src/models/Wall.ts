@@ -73,23 +73,18 @@ export default class Wall {
     }
 
     addTiles(blockTiles: Position[]): void {
-        try {
-            blockTiles.forEach(tile => {
-                // Get the column and row numbers
-                let col = Math.floor(tile.x / TILE_DIM)
-                let row = Math.floor(tile.y / TILE_DIM)
-                // If the col and row are inside the canvas range, add the tile to the wall
-                if (col < WALL_NUM_TILES_WIDTH && col >= 0 && row < WALL_NUM_TILES_HEIGHT && row >= 0) {
-                    this.tiles[row][col] = { x: col * TILE_DIM, y: row * TILE_DIM }
-                }
-                else {
-                    throw new Error('Game Over!!');
-                }
-            })
-        }
-        catch (e) {
-            console.error(e.message);
-        }
+        blockTiles.forEach(tile => {
+            // Get the column and row numbers
+            let col = Math.floor(tile.x / TILE_DIM)
+            let row = Math.floor(tile.y / TILE_DIM)
+            // If the col and row are inside the canvas range, add the tile to the wall
+            if (col < WALL_NUM_TILES_WIDTH && col >= 0 && row < WALL_NUM_TILES_HEIGHT && row >= 0) {
+                this.tiles[row][col] = { x: col * TILE_DIM, y: row * TILE_DIM };
+            }
+            else {
+                throw new Error('Game Over');
+            }
+        });
     }
 
     removeTiles(rowNumber: number): void {

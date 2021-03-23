@@ -7,6 +7,8 @@ const gameReducer = (state: GameState, action: GameAction) => {
     switch (action.type) {
         case gameAction.GAME_STATUS:
             return setStatus(state, action.value);
+        case gameAction.GAME_SCORE:
+            return setScore(state, action.value);
         default:
             return state;
     }
@@ -35,9 +37,21 @@ function setStatus(state: GameState, newStatus: GameStatus): GameState {
                 statusText: statusText.running
             };
         default:
-            throw new Error("Unexpected status value");
+            throw new Error("Unexpected status value: " + newStatus);
     }
+}
 
+function setScore(state: GameState, newScore: number): GameState {
+
+    if (newScore > 0) {
+        return {
+            ...state, 
+            score: state.score + newScore
+        };
+    }
+    else {
+        throw new Error("Unexpected score value: " + newScore);
+    }
 }
 
 export default gameReducer;

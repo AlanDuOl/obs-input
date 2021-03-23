@@ -29,7 +29,6 @@ export default class Board {
         this.block.moveDown();
         this.clearCanvas();
         this.drawObjects();
-        this.checkGameOver()
         this.collisionUpdates();
     }
 
@@ -70,14 +69,20 @@ export default class Board {
     private collisionUpdates(): void {
         // // Check for block bottom collision with canvas or wall
         let collisionTiles = this.checkBottomCollision();
+        let numRemovedRows = 0;
         // colligion
         if (collisionTiles.length === BLOCK_NUM_TILES) {
             // Update the wall
-            let numRemovedRows = this.wall.update(collisionTiles);
+            try {
+                numRemovedRows = this.wall.update(collisionTiles);
+            } catch (error) {
+                if (error.message === 'Game Over') {
+                    this.set({ type: gameAction.GAME_STATUS, value: GameStatus.finished });
+                }
+            }
             // If a row was removed the info should be updated (score) and checked to update (level, record)
-            // TODO
             if (numRemovedRows > 0) {
-                // this.info.update(numRemovedRows, this.setGameState)
+                this.set({ type: gameAction.GAME_SCORE, value: numRemovedRows });
             }
             // change game score and check for Score updates on level and record
             this.block = new Block(this.canvasDims, this.gameState.level);
@@ -114,24 +119,6 @@ export default class Board {
             console.error(e.message);
         }
         return collisionTiles;
-    }
-
-    checkGameOver(): void {
-        try {
-            for (let row = 0; row < BLOCK_NUM_TILES; row++) {
-                for (let col = 0; col < WALL_NUM_TILES_WIDTH; col++) {
-                    if (Object.keys(this.wall.Tiles[row][col]).length === 2) {
-                        // If there is a tile in the wall with y position < 0 the game is over
-                        if (this.wall.Tiles[row][col].y < 0) {
-                            this.set({ type: gameAction.GAME_STATUS, value: GameStatus.finished });
-                        }
-                    }
-                }
-            }
-        }
-        catch (e) {
-            console.error(e.message)
-        }
     }
 }
 

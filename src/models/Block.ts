@@ -182,7 +182,6 @@ export default class Block {
                 loop1:
                 for (let row = blockDims.rows[0]; row <= blockDims.rows[blockDims.rows.length - 1] + 1; row++) {
                     for (let col = blockDims.cols[0]; col <= blockDims.cols[blockDims.cols.length - 1]; col++) {
-                        console.log('x', wall[row][col].x, 'y', wall[row][col].y)
                         if (wall[row][col].x !== WALL_EMPTY_VALUE && wall[row][col].y !== WALL_EMPTY_VALUE) {
                             collision = true;
                             break loop1;
@@ -194,7 +193,6 @@ export default class Block {
         catch (e) {
             console.error(e.message);
         }
-        console.log('collision', collision)
         return collision;
     }
 
@@ -215,25 +213,25 @@ export default class Block {
         tilesCols.sort();
         let finalRows = new Set(tilesRows);
         let finalCols = new Set(tilesCols);
-        return { rows: Array.from(finalRows.values()), cols: Array.from(finalCols.values()) }
+        return { rows: Array.from(finalRows.values()), cols: Array.from(finalCols.values()) };
     }
 
     getRotateTiles(): Position[] {
         const tiles = createTilesCopy(this.tiles);
         // Rotate the points around the rotation point
         try {
-            let angle = (Math.PI / 180) * BLOCK_DELTA_ROTATION
+            let angle = (Math.PI / 180) * BLOCK_DELTA_ROTATION;
             tiles.forEach((tile: Position) => {
                 // Make a copy to avoid using changed tile.x in tile.y new value
-                let currentTile = Object.assign({}, tile)
+                let currentTile = Object.assign({}, tile);
                 // Rotate tile.x around rotationPoint
-                tile.x = Math.round(Math.cos(angle) * (currentTile.x - this.rotationPoint.x) - Math.sin(angle) * (currentTile.y - this.rotationPoint.y) + this.rotationPoint.x)
+                tile.x = Math.round(Math.cos(angle) * (currentTile.x - this.rotationPoint.x) - Math.sin(angle) * (currentTile.y - this.rotationPoint.y) + this.rotationPoint.x);
                 // Rotate tile.y around rotationPoint
-                tile.y = Math.sin(angle) * (currentTile.x - this.rotationPoint.x) + Math.cos(angle) * (currentTile.y - this.rotationPoint.y) + this.rotationPoint.y
+                tile.y = Math.sin(angle) * (currentTile.x - this.rotationPoint.x) + Math.cos(angle) * (currentTile.y - this.rotationPoint.y) + this.rotationPoint.y;
             })
         }
         catch (e) {
-            console.error(e.message)
+            console.error(e.message);
         }
         return tiles;
     }
